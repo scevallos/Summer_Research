@@ -19,61 +19,33 @@ def get_shielding(atom_numbers, log_file_name):
 def calc_G(H, S, T):
 	return H-(T*(S/1000))
 
-def calc_Nj(delG, T):
-	e = 2.71828182845904
-	return e**(-delG/T/0.0019872)
+def calc_shifts(shielding_vals, TMS):
+	shifts = []
+	for s in shielding_vals:
+		shifts.append(-(s-TMS))
+	return shifts
 
-def calc_shift(shielding, TMS):
-	return -(shielding - TMS)
-
-def print_table(G_ds, delGs, Njs, N, pops, shifts, Hr, Hs, shift_diff):
-	print "--------------------------------------------------"
-	print "\t", "D = 20", "\t \t", "D = 21", "\t \t", "D = 22"
-	print "G", "\t", G_ds[0], "\t", G_ds[1], "\t", G_ds[2]
-	print "delG", "\t", delGs[0], "\t \t", delGs[1], "\t", delGs[2]
-	print "Nj", "\t", Njs[0], "\t \t", Njs[1], "\t", Njs[2]
-	print "N", "\t", N
-	print "Pops", "\t", pops[0], "\t", pops[1], "\t", pops[2]
-	print "--------------------------------------------------"
-	print "\t", "H = 20", "\t \t", "H = 21", "\t \t", "H = 22"
-	print "shift", "\t", shifts[0], "\t \t", shifts[1], "\t \t", shifts[2]
-	print "H_r", "\t", Hr, "ppm"
-	print "H_s", "\t", Hs, "ppm"
-	print "H_r - H-s =", shift_diff, " ppm"
-	print "--------------------------------------------------"
-
-def main():
-	Tk().withdraw()
-
-	T = 298.15
-
-	G_d20 = calc_G(130.8150, 88.8790, T)
-	G_d21 = calc_G(130.8930, 88.9100, T)
-	G_d22 = calc_G(130.8290, 88.8840, T)
-
-	G_ds = [G_d20, G_d21, G_d22]
-
+def calc_delGs(Gs):
 	delGs = []
-	for x in G_ds:
-		delGs.append(x - G_ds[0])
+	for x in Gs:
+		delGs.append(x - Gs[0])
+	return delGs
 
+def calc_Njs_N(delGs, T):
+	e = 2.71828182845904
 	Njs = [1] # Nj_d20 is 1, start with it inside the list
 	for x in delGs[1:]:
-		Njs.append(calc_Nj(x, T))
-
+		Njs.append(e**(-x/T/0.0019872))
 	N = sum(Njs)
+	return Njs, N
 
+def calc_pops(Njs, N):
 	pops = []
 	for x in Njs:
 		pops.append(x/N)
+	return pops
 
-	TMS = 32.426
-
-	shifts = []
-	shifts.append(calc_shift(30.0125, TMS))
-	shifts.append(calc_shift(30.9039, TMS))
-	shifts.append(calc_shift(30.5504, TMS))
-
+def calc_shift_diff(pops, shifts):
 	shifts_cycle = cycle(shifts)
 	next(shifts_cycle) # start one index up (shift_h21)
 
@@ -91,17 +63,81 @@ def main():
 	H_s = sum(Svals)
 	shift_diff = H_r - H_s
 
+	return H_r, H_s, shift_diff
+
+def calc_nmr_shifts(H_vals, S_vals, T, shielding_vals, TMS):
+	Gs = []
+	for h,s in zip(H_vals, S_vals):
+		Gs.append(calc_G(h, s, T))
+	delGs = calc_delGs(Gs)
+	Njs,N = calc_Njs_N(delGs, T)
+	pops = calc_pops(Njs, N)
+	H_r, H_s, shift_diff = calc_shift_diff(pops, calc_shifts(shielding_vals, TMS))
+
+	return H_r, H_s, shift_diff
+
+def manual_shift_diff():
+	print "Please enter the temperature (K)."
+	T = float(raw_input()) # 298.15
+
+	print "Please enter the H values, separated by a space.."
+	hvals = raw_input().split() #not sure about this
+
+	print "Please enter the S values, separated by a space.."
+	svals = raw_input().split() #not sure about this
+
+	print "Calculating NMR Shifts..."
+
+	r, s, d = calc_nmr_shifts([130.8150, 130.8930, 130.8290], [88.8790, 88.9100, 88.8840], T, [30.0125, 30.9039, 30.5504], 32.426)
+
 	# print_table(G_ds, delGs, Njs, N, pops, shifts, H_r, H_s, shift_diff)
-	print "Please enter the atom numbers you would like to get the shielding of, seperated by a space."
+	print "--------------------------------------------------"
+	print "H_r", "\t", r, "ppm"
+	print "H_s", "\t", s, "ppm"
+	print "H_r - H-s =", d, " ppm"
+	print "--------------------------------------------------"
+
+def auto_shift_diff():
+	Tk().withdraw()
+	
+	print "Please enter the atom numbers you would like to get the shifts of, seperated by a space."
 	atom_nums = raw_input().split()
 	print "Please select the Gaussian log file containing the NMR calculations"
 	fname = askopenfilename()
 
+	TMS = 32.426
+
 	shielding = get_shielding(atom_nums, fname)
 	shielding = map(float, shielding)
-	a = [calc_shift(x, TMS) for x in shielding]
-	
+	shifts_IO = map(str, calc_shifts(shielding, TMS))
 
+	print "Shift (ppm)"
+	print "--------------------------------------------------"
+	print "Atom No.", "\t", "\t".join(atom_nums)
+	print "Shifts", "\t \t", "\t".join(shifts_IO)
+	print "--------------------------------------------------"
+
+def print_table(G_ds, delGs, Njs, N, pops, shifts, Hr, Hs, shift_diff):
+	print "--------------------------------------------------"
+	print "\t", "D = 20", "\t \t", "D = 21", "\t \t", "D = 22"
+	print "G", "\t", G_ds[0], "\t", G_ds[1], "\t", G_ds[2]
+	print "delG", "\t", delGs[0], "\t \t", delGs[1], "\t", delGs[2]
+	print "Nj", "\t", Njs[0], "\t \t", Njs[1], "\t", Njs[2]
+	print "N", "\t", N
+	print "Pops", "\t", pops[0], "\t", pops[1], "\t", pops[2]
+	print "--------------------------------------------------"
+	print "\t", "H = 20", "\t \t", "H = 21", "\t \t", "H = 22"
+	print "shift", "\t", shifts[0], "\t \t", shifts[1], "\t \t", shifts[2]
+	print "H_r", "\t", Hr, "ppm"
+	print "H_s", "\t", Hs, "ppm"
+	print "H_r - H-s =", shift_diff, " ppm"
+	print "--------------------------------------------------"
+
+
+def main():
+	
+	# manual_shift_diff()
+	auto_shift_diff()
 
 if __name__ == '__main__':
 	main()
