@@ -1,24 +1,37 @@
 from Tkinter import *
-import tkFileDialog as fd
+from ttk import *
+import itertools
+import tkFileDialog
 
-def GUI():
-	window = Tk()
-	B = Button(window, text="Hi", command= print_hi).grid(columnspan=2)
+def askdirectory():
+  dirname = tkFileDialog.askdirectory()
+  if dirname:
+    var.set(dirname)
 
-	a = "x"
-	b = "z"
-	c = "a"
-	d = 'p'
+def UserFileInput(status,name):
+  optionFrame = Frame(root)
+  optionLabel = Label(optionFrame)
+  optionLabel["text"] = name
+  optionLabel.pack(side=LEFT)
+  text = status
+  var = StringVar(root)
+  var.set(text)
+  w = Entry(optionFrame, textvariable= var)
+  w.pack(side = LEFT)
+  optionFrame.pack()
+  return w, var
 
-	if a == "" or b == "" or c == "" or d == "":
-		print 'true'
+def Print_entry():
+  print var.get()
 
-	window.mainloop()
-def print_hi():
-	print 'hi'
+if __name__ == '__main__':
+  root = Tk()
 
-def main():
-	GUI()
+  dirBut = Button(root, text='askdirectory', command = askdirectory)
+  dirBut.pack(side = RIGHT)
+  getBut = Button(root, text='print entry text', command = Print_entry)
+  getBut.pack(side = BOTTOM)
 
-if __name__=="__main__":
-    main()
+  w, var = UserFileInput("", "Directory")
+
+  root.mainloop()

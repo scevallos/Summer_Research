@@ -80,11 +80,11 @@ def manual_shift_diff():
 	print "Please enter the temperature (K)."
 	T = float(raw_input()) # 298.15
 
-	print "Please enter the H values, separated by a space.."
-	hvals = raw_input().split() #not sure about this
+	# print "Please enter the H values, separated by a space.."
+	# hvals = raw_input().split() #not sure about this
 
-	print "Please enter the S values, separated by a space.."
-	svals = raw_input().split() #not sure about this
+	# print "Please enter the S values, separated by a space.."
+	# svals = raw_input().split() #not sure about this
 
 	print "Calculating NMR Shifts..."
 
@@ -100,8 +100,10 @@ def manual_shift_diff():
 def auto_shift_diff():
 	Tk().withdraw()
 	
+
 	print "Please enter the atom numbers you would like to get the shifts of, seperated by a space."
 	atom_nums = raw_input().split()
+
 	print "Please select the Gaussian log file containing the NMR calculations"
 	fname = askopenfilename()
 

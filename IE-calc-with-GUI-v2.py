@@ -11,7 +11,6 @@ import csv
 import datetime
 from Tkinter import *
 import tkMessageBox
-import Tkinter
 import matplotlib.pyplot as pyplot
 
 def GUI():
